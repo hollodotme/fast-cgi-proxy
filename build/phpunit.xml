@@ -8,8 +8,11 @@
         convertNoticesToExceptions="true"
         convertWarningsToExceptions="true">
     <testsuites>
-        <testsuite name="FastCGI">
+        <testsuite name="FastCGI-Unit">
             <directory suffix="Test.php">../tests/Unit</directory>
+        </testsuite>
+        <testsuite name="FastCGI-Integration">
+            <directory suffix="Test.php">../tests/Integration</directory>
         </testsuite>
     </testsuites>
     <filter>
