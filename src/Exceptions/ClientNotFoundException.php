@@ -6,10 +6,10 @@
 namespace hollodotme\FastCGI\Exceptions;
 
 /**
- * Class RepoTemplateException
+ * Class ClientNotFoundException
  * @package hollodotme\FastCGI\Exceptions
  */
-class LogicException extends \LogicException
+final class ClientNotFoundException extends FastCGIProxyException
 {
 
 }

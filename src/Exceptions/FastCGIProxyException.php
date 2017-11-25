@@ -6,10 +6,10 @@
 namespace hollodotme\FastCGI\Exceptions;
 
 /**
- * Class RuntimeException
+ * Class FastCGIProxyException
  * @package hollodotme\FastCGI\Exceptions
  */
-class RuntimeException extends \RuntimeException
+class FastCGIProxyException extends \Exception
 {
 
 }
