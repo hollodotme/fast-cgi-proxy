@@ -20,6 +20,11 @@ We accept contributions via pull requests on [GitHub](https://github.com/hollodo
 
 ## Running tests
 
+- Add the relevant pools to a working php-fpm service:
+   - [for PHP-FPM 7.1](./env/php-fpm/7.1)
+ 
+- Then run tests:
+
 ```bash
 $ php vendor/bin/phpunit.phar -c build/
 ```

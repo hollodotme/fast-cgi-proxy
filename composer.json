@@ -1,6 +1,6 @@
 {
   "name": "hollodotme/fast-cgi-proxy",
-  "description": "A proxy for distributing (a)sync requests via FastCGI",
+  "description": "A proxy for distributing (a)sync requests to multiple php-fpm sockets/pools.",
   "minimum-stability": "dev",
   "prefer-stable": true,
   "license": "MIT",
