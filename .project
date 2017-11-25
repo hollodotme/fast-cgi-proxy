@@ -1,0 +1,6 @@
+VendorName = "hollodotme"
+ProjectName = "FastCGI"
+ProjectDescription = "A proxy for distributing (a)sync requests via FastCGI"
+PackageName = "hollodotme/fast-cgi-proxy"
+ProjectDomain = "fast-cgi-proxy.de"
+ProjectIP = "192.168.3.14"
