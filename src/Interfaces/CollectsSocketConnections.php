@@ -11,5 +11,5 @@ namespace hollodotme\FastCGI\Interfaces;
  */
 interface CollectsSocketConnections
 {
-	public function add( ConfiguresSocketConnection ...$connections ) : void;
+	public function add( ConfiguresSocketConnection $connection, ConfiguresSocketConnection ...$connections ) : void;
 }
