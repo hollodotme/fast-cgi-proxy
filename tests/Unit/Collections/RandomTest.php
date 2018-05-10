@@ -11,6 +11,7 @@ use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
 use hollodotme\FastCGI\SocketConnections\NetworkSocket;
 use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
 use PHPUnit\Framework\TestCase;
+use function in_array;
 
 /**
  * Class RandomTest
@@ -18,6 +19,10 @@ use PHPUnit\Framework\TestCase;
  */
 final class RandomTest extends TestCase
 {
+	/**
+	 * @throws MissingConnectionsException
+	 * @throws \hollodotme\FastCGI\Exceptions\ClientNotFoundException
+	 */
 	public function testThrowsExceptionWhenAttemptToGetClientFromEmptyCollection() : void
 	{
 		$random = new Random();
@@ -27,6 +32,12 @@ final class RandomTest extends TestCase
 		$random->getClient();
 	}
 
+	/**
+	 * @throws MissingConnectionsException
+	 * @throws \PHPUnit\Framework\ExpectationFailedException
+	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 * @throws \hollodotme\FastCGI\Exceptions\ClientNotFoundException
+	 */
 	public function testCanAddConnections() : void
 	{
 		$random      = new Random();
@@ -39,6 +50,6 @@ final class RandomTest extends TestCase
 		$random->add( $connection1, $connection2 );
 
 		$this->assertInstanceOf( Client::class, $random->getClient() );
-		$this->assertTrue( \in_array( $random->getClient(), [$client1, $client2], false ) );
+		$this->assertTrue( in_array( $random->getClient(), [$client1, $client2], false ) );
 	}
 }
