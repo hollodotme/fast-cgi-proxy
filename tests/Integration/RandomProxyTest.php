@@ -5,6 +5,7 @@
 
 namespace hollodotme\FastCGI\Tests\Integration;
 
+use Closure;
 use hollodotme\FastCGI\Collections\Random;
 use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
 use hollodotme\FastCGI\Interfaces\ProvidesRequestData;
@@ -14,6 +15,9 @@ use hollodotme\FastCGI\Requests\PostRequest;
 use hollodotme\FastCGI\SocketConnections\NetworkSocket;
 use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
 use PHPUnit\Framework\TestCase;
+use function http_build_query;
+use function in_array;
+use function usleep;
 
 /**
  * Class ProxyTest
@@ -23,6 +27,10 @@ final class RandomProxyTest extends TestCase
 {
 	private const WORKER = __DIR__ . '/Workers/worker.php';
 
+	/**
+	 * @throws \PHPUnit\Framework\ExpectationFailedException
+	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 */
 	public function testCanSendSynchronousRequests() : void
 	{
 		$proxy = $this->getProxy();
@@ -51,7 +59,7 @@ final class RandomProxyTest extends TestCase
 			],
 		];
 
-		$this->assertTrue( \in_array( $responses, $expectedResponses, false ) );
+		$this->assertTrue( in_array( $responses, $expectedResponses, false ) );
 	}
 
 	private function getProxy() : Proxy
@@ -87,7 +95,9 @@ final class RandomProxyTest extends TestCase
 		$proxy    = $this->getProxy();
 		$callback = function ( ProvidesResponseData $response ) use ( $test )
 		{
-			$test->assertTrue( \in_array( $response->getBody(), ['Unit-Test-network-socket', 'Unit-Test-unix-domain-socket'], true ) );
+			$test->assertTrue(
+				in_array( $response->getBody(), ['Unit-Test-network-socket', 'Unit-Test-unix-domain-socket'], true )
+			);
 		};
 
 		$requestId1 = $proxy->sendAsyncRequest( $this->getRequestWithCallback( $callback ) );
@@ -97,6 +107,10 @@ final class RandomProxyTest extends TestCase
 		$proxy->waitForResponse( $requestId2 );
 	}
 
+	/**
+	 * @throws \PHPUnit\Framework\ExpectationFailedException
+	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 */
 	public function testCanCheckIfProxyHasResponse() : void
 	{
 		$proxy = $this->getProxy();
@@ -116,7 +130,9 @@ final class RandomProxyTest extends TestCase
 		$proxy    = $this->getProxy();
 		$callback = function ( ProvidesResponseData $response ) use ( $test )
 		{
-			$test->assertTrue( \in_array( $response->getBody(), ['Unit-Test-network-socket', 'Unit-Test-unix-domain-socket'], true ) );
+			$test->assertTrue(
+				in_array( $response->getBody(), ['Unit-Test-network-socket', 'Unit-Test-unix-domain-socket'], true )
+			);
 		};
 
 		$proxy->sendAsyncRequest( $this->getRequestWithCallback( $callback ) );
@@ -127,7 +143,7 @@ final class RandomProxyTest extends TestCase
 		$proxy->waitForResponses();
 	}
 
-	private function getRequestWithCallback( \Closure $callback ) : ProvidesRequestData
+	private function getRequestWithCallback( Closure $callback ) : ProvidesRequestData
 	{
 		$request = new PostRequest(
 			self::WORKER,
@@ -139,6 +155,10 @@ final class RandomProxyTest extends TestCase
 		return $request;
 	}
 
+	/**
+	 * @throws \PHPUnit\Framework\ExpectationFailedException
+	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 */
 	public function testCanReadResponses() : void
 	{
 		$proxy      = $this->getProxy();
@@ -154,10 +174,14 @@ final class RandomProxyTest extends TestCase
 
 		foreach ( $proxy->readResponses( null, $requestId1, $requestId2, $requestId3, $requestId4 ) as $response )
 		{
-			$this->assertTrue( \in_array( $response->getBody(), $expectedResponses, true ) );
+			$this->assertTrue( in_array( $response->getBody(), $expectedResponses, true ) );
 		}
 	}
 
+	/**
+	 * @throws \PHPUnit\Framework\ExpectationFailedException
+	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 */
 	public function testCanReadReadyResponses() : void
 	{
 		$proxy = $this->getProxy();
@@ -175,7 +199,7 @@ final class RandomProxyTest extends TestCase
 		{
 			foreach ( $proxy->readReadyResponses() as $response )
 			{
-				$this->assertTrue( \in_array( $response->getBody(), $expectedResponses, true ) );
+				$this->assertTrue( in_array( $response->getBody(), $expectedResponses, true ) );
 			}
 		}
 	}
