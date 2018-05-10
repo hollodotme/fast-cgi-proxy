@@ -14,6 +14,9 @@ use hollodotme\FastCGI\Requests\PostRequest;
 use hollodotme\FastCGI\SocketConnections\NetworkSocket;
 use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
 use PHPUnit\Framework\TestCase;
+use function http_build_query;
+use function in_array;
+use function usleep;
 
 /**
  * Class RoundRobinProxyTest
@@ -23,6 +26,10 @@ final class RoundRobinProxyTest extends TestCase
 {
 	private const WORKER = __DIR__ . '/Workers/worker.php';
 
+	/**
+	 * @throws \PHPUnit\Framework\ExpectationFailedException
+	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 */
 	public function testCanSendSynchronousRequests() : void
 	{
 		$proxy = $this->getProxy();
@@ -91,6 +98,10 @@ final class RoundRobinProxyTest extends TestCase
 		$proxy->waitForResponse( $requestId2 );
 	}
 
+	/**
+	 * @throws \PHPUnit\Framework\ExpectationFailedException
+	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 */
 	public function testCanCheckIfProxyHasResponse() : void
 	{
 		$proxy = $this->getProxy();
@@ -115,7 +126,8 @@ final class RoundRobinProxyTest extends TestCase
 		{
 			$test->assertSame( 'Unit-Test-unix-domain-socket', $response->getBody() );
 		};
-		$proxy     = $this->getProxy();
+
+		$proxy = $this->getProxy();
 
 		$proxy->sendAsyncRequest( $this->getRequestWithCallback( $callback1 ) );
 		$proxy->sendAsyncRequest( $this->getRequestWithCallback( $callback2 ) );
@@ -137,6 +149,10 @@ final class RoundRobinProxyTest extends TestCase
 		return $request;
 	}
 
+	/**
+	 * @throws \PHPUnit\Framework\ExpectationFailedException
+	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 */
 	public function testCanReadResponses() : void
 	{
 		$proxy      = $this->getProxy();
@@ -161,6 +177,10 @@ final class RoundRobinProxyTest extends TestCase
 		$this->assertSame( $expectedResponses, $responses );
 	}
 
+	/**
+	 * @throws \PHPUnit\Framework\ExpectationFailedException
+	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 */
 	public function testCanReadReadyResponses() : void
 	{
 		$proxy = $this->getProxy();
@@ -178,7 +198,7 @@ final class RoundRobinProxyTest extends TestCase
 		{
 			foreach ( $proxy->readReadyResponses() as $response )
 			{
-				$this->assertTrue( \in_array( $response->getBody(), $expectedResponses, true ) );
+				$this->assertTrue( in_array( $response->getBody(), $expectedResponses, true ) );
 			}
 		}
 	}
