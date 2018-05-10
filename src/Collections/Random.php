@@ -6,6 +6,10 @@
 namespace hollodotme\FastCGI\Collections;
 
 use hollodotme\FastCGI\Client;
+use hollodotme\FastCGI\Exceptions\ClientNotFoundException;
+use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
+use function reset;
+use function shuffle;
 
 /**
  * Class Random
@@ -13,13 +17,18 @@ use hollodotme\FastCGI\Client;
  */
 final class Random extends AbstractClientCollection
 {
+	/**
+	 * @throws ClientNotFoundException
+	 * @throws MissingConnectionsException
+	 * @return Client
+	 */
 	public function getClient() : Client
 	{
 		$this->guardHasClients();
 
 		$indices = $this->getIndices();
-		\shuffle( $indices );
+		shuffle( $indices );
 
-		return $this->getClientWithIndex( \reset( $indices ) );
+		return $this->getClientWithIndex( reset( $indices ) );
 	}
 }
