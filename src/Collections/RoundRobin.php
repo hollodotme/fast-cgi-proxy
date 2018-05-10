@@ -6,6 +6,9 @@
 namespace hollodotme\FastCGI\Collections;
 
 use hollodotme\FastCGI\Client;
+use hollodotme\FastCGI\Exceptions\ClientNotFoundException;
+use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
+use function in_array;
 
 /**
  * Class RoundRobinConnections
@@ -15,6 +18,11 @@ final class RoundRobin extends AbstractClientCollection
 {
 	private $nextIndex = 0;
 
+	/**
+	 * @throws ClientNotFoundException
+	 * @throws MissingConnectionsException
+	 * @return Client
+	 */
 	public function getClient() : Client
 	{
 		$this->guardHasClients();
@@ -23,7 +31,7 @@ final class RoundRobin extends AbstractClientCollection
 
 		$this->nextIndex++;
 
-		if ( !\in_array( $this->nextIndex, $this->getIndices(), true ) )
+		if ( !in_array( $this->nextIndex, $this->getIndices(), true ) )
 		{
 			$this->nextIndex = 0;
 		}
