@@ -12,7 +12,7 @@
   ],
   "require": {
     "php": ">=7.1",
-    "hollodotme/fast-cgi-client": "^2.4.0"
+    "hollodotme/fast-cgi-client": "~2.4.0"
   },
   "autoload": {
     "psr-4": {
@@ -25,7 +25,7 @@
     }
   },
   "require-dev": {
-    "tm/tooly-composer-script": "^1.0"
+    "tm/tooly-composer-script": "~1.0"
   },
   "scripts": {
     "post-install-cmd": "Tooly\\ScriptHandler::installPharTools",
@@ -34,11 +34,11 @@
   "extra": {
     "tools": {
       "phpunit": {
-        "url": "https://phar.phpunit.de/phpunit-6.4.4.phar",
+        "url": "https://phar.phpunit.de/phpunit-7.phar",
         "only-dev": true
       },
       "coveralls": {
-        "url": "https://github.com/satooshi/php-coveralls/releases/download/v1.0.1/coveralls.phar",
+        "url": "https://github.com/php-coveralls/php-coveralls/releases/download/v2.0.0/php-coveralls.phar",
         "only-dev": true
       },
       "phpmetrics": {
