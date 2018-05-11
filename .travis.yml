@@ -8,7 +8,7 @@ php:
 
 cache:
   directories:
-    - vendor
+    - $HOME/.composer/cache/files
 
 git:
   depth: 5
