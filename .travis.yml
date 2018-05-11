@@ -10,6 +10,9 @@ cache:
   directories:
     - vendor
 
+git:
+  depth: 5
+
 branches:
   only:
     - master
