@@ -1,17 +1,24 @@
 <phpunit
-        bootstrap="../tests/bootstrap.php"
-        verbose="true"
-        beStrictAboutOutputDuringTests="true"
-        beStrictAboutTestSize="true"
-        colors="true"
-        convertErrorsToExceptions="true"
-        convertNoticesToExceptions="true"
-        convertWarningsToExceptions="true">
+    bootstrap="../tests/bootstrap.php"
+    verbose="true"
+    beStrictAboutOutputDuringTests="true"
+    colors="true"
+    convertErrorsToExceptions="true"
+    convertNoticesToExceptions="true"
+    convertWarningsToExceptions="true">
+    <php>
+        <env name="network-socket-host" value="127.0.0.1"/>
+        <env name="network-socket-port" value="9001"/>
+        <env name="unix-domain-socket" value="/var/run/php-uds.sock"/>
+        <env name="restricted-unix-domain-socket" value="/var/run/php-ruds.sock"/>
+        <env name="non-existing-unix-domain-socket" value="/tmp/not/existing.sock"/>
+        <env name="invalid-unix-domain-socket" value="/Fixtures/test.sock"/>
+    </php>
     <testsuites>
-        <testsuite name="FastCGI-Unit">
+        <testsuite name="Unit">
             <directory suffix="Test.php">../tests/Unit</directory>
         </testsuite>
-        <testsuite name="FastCGI-Integration">
+        <testsuite name="Integration">
             <directory suffix="Test.php">../tests/Integration</directory>
         </testsuite>
     </testsuites>
@@ -20,9 +27,4 @@
             <directory suffix=".php">../src</directory>
         </whitelist>
     </filter>
-    <logging>
-        <log type="coverage-html" target="logs/coverage"/>
-        <log type="coverage-clover" target="logs/clover.xml"/>
-        <log type="coverage-text" target="php://stdout" showUncoveredFiles="true"/>
-    </logging>
 </phpunit>
