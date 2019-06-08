@@ -9,7 +9,11 @@ use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
 use hollodotme\FastCGI\SocketConnections\NetworkSocket;
 use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
 use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
+use PHPUnit\Framework\Exception;
+use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
+use SebastianBergmann\RecursionContext\InvalidArgumentException;
+use function method_exists;
 
 final class RandomTest extends TestCase
 {
@@ -31,6 +35,9 @@ final class RandomTest extends TestCase
 
 	/**
 	 * @throws ClientNotFoundException
+	 * @throws Exception
+	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
 	 * @throws MissingConnectionsException
 	 */
 	public function testCanAddConnections() : void
@@ -49,9 +56,31 @@ final class RandomTest extends TestCase
 
 		$random->add( $networkSocket, $unixDomainSocket );
 
-		$this->assertContainsEquals(
+		$this->assertContainsEqualObjects(
 			$random->getClient(),
 			[$networkSocketClient, $unixDomainSocketClient]
 		);
+	}
+
+	/**
+	 * @param          $needle
+	 * @param iterable $haystack
+	 * @param string   $message
+	 *
+	 * @throws Exception
+	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 */
+	private function assertContainsEqualObjects( $needle, iterable $haystack, string $message = '' ) : void
+	{
+		/** @noinspection ClassMemberExistenceCheckInspection */
+		if ( method_exists( $this, 'assertContainsEquals' ) )
+		{
+			$this->assertContainsEquals( $needle, $haystack, $message );
+
+			return;
+		}
+
+		$this->assertContains( $needle, $haystack, $message, false, false );
 	}
 }
