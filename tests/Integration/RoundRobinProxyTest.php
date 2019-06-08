@@ -1,10 +1,8 @@
 <?php declare(strict_types=1);
-/**
- * @author hollodotme
- */
 
 namespace hollodotme\FastCGI\Tests\Integration;
 
+use Closure;
 use hollodotme\FastCGI\Collections\RoundRobin;
 use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
 use hollodotme\FastCGI\Interfaces\ProvidesRequestData;
@@ -13,27 +11,27 @@ use hollodotme\FastCGI\Proxy;
 use hollodotme\FastCGI\Requests\PostRequest;
 use hollodotme\FastCGI\SocketConnections\NetworkSocket;
 use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
+use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
+use PHPUnit\Framework\Exception;
+use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 use function http_build_query;
-use function in_array;
 use function usleep;
 
-/**
- * Class RoundRobinProxyTest
- * @package hollodotme\FastCGI\Tests\Integration
- */
 final class RoundRobinProxyTest extends TestCase
 {
+	use SocketDataProviding;
+
 	private const WORKER = __DIR__ . '/Workers/worker.php';
 
 	/**
-	 * @throws \PHPUnit\Framework\ExpectationFailedException
-	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 * @throws ExpectationFailedException
 	 */
 	public function testCanSendSynchronousRequests() : void
 	{
 		$proxy = $this->getProxy();
 
+		/** @noinspection RepetitiveMethodCallsInspection */
 		$responses = [
 			$proxy->sendRequest( $this->getRequest() )->getBody(),
 			$proxy->sendRequest( $this->getRequest() )->getBody(),
@@ -65,8 +63,13 @@ final class RoundRobinProxyTest extends TestCase
 	private function getConnections() : array
 	{
 		return [
-			new NetworkSocket( '127.0.0.1', 9001 ),
-			new UnixDomainSocket( '/var/run/php-uds.sock' ),
+			new NetworkSocket(
+				$this->getNetworkSocketHost(),
+				$this->getNetworkSocketPort()
+			),
+			new UnixDomainSocket(
+				$this->getUnixDomainSocket()
+			),
 		];
 	}
 
@@ -81,11 +84,11 @@ final class RoundRobinProxyTest extends TestCase
 	public function testCanWaitForResponse() : void
 	{
 		$test      = $this;
-		$callback1 = function ( ProvidesResponseData $response ) use ( $test )
+		$callback1 = static function ( ProvidesResponseData $response ) use ( $test )
 		{
 			$test->assertSame( 'Unit-Test-network-socket', $response->getBody() );
 		};
-		$callback2 = function ( ProvidesResponseData $response ) use ( $test )
+		$callback2 = static function ( ProvidesResponseData $response ) use ( $test )
 		{
 			$test->assertSame( 'Unit-Test-unix-domain-socket', $response->getBody() );
 		};
@@ -99,8 +102,7 @@ final class RoundRobinProxyTest extends TestCase
 	}
 
 	/**
-	 * @throws \PHPUnit\Framework\ExpectationFailedException
-	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 * @throws ExpectationFailedException
 	 */
 	public function testCanCheckIfProxyHasResponse() : void
 	{
@@ -118,11 +120,11 @@ final class RoundRobinProxyTest extends TestCase
 	public function testCanWaitForResponses() : void
 	{
 		$test      = $this;
-		$callback1 = function ( ProvidesResponseData $response ) use ( $test )
+		$callback1 = static function ( ProvidesResponseData $response ) use ( $test )
 		{
 			$test->assertSame( 'Unit-Test-network-socket', $response->getBody() );
 		};
-		$callback2 = function ( ProvidesResponseData $response ) use ( $test )
+		$callback2 = static function ( ProvidesResponseData $response ) use ( $test )
 		{
 			$test->assertSame( 'Unit-Test-unix-domain-socket', $response->getBody() );
 		};
@@ -137,7 +139,7 @@ final class RoundRobinProxyTest extends TestCase
 		$proxy->waitForResponses();
 	}
 
-	private function getRequestWithCallback( \Closure $callback ) : ProvidesRequestData
+	private function getRequestWithCallback( Closure $callback ) : ProvidesRequestData
 	{
 		$request = new PostRequest(
 			self::WORKER,
@@ -150,8 +152,7 @@ final class RoundRobinProxyTest extends TestCase
 	}
 
 	/**
-	 * @throws \PHPUnit\Framework\ExpectationFailedException
-	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 * @throws ExpectationFailedException
 	 */
 	public function testCanReadResponses() : void
 	{
@@ -178,8 +179,8 @@ final class RoundRobinProxyTest extends TestCase
 	}
 
 	/**
-	 * @throws \PHPUnit\Framework\ExpectationFailedException
-	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 * @throws ExpectationFailedException
+	 * @throws Exception
 	 */
 	public function testCanReadReadyResponses() : void
 	{
@@ -198,7 +199,7 @@ final class RoundRobinProxyTest extends TestCase
 		{
 			foreach ( $proxy->readReadyResponses() as $response )
 			{
-				$this->assertTrue( in_array( $response->getBody(), $expectedResponses, true ) );
+				$this->assertContains( $response->getBody(), $expectedResponses );
 			}
 		}
 	}

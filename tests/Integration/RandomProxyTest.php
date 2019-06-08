@@ -1,7 +1,4 @@
 <?php declare(strict_types=1);
-/**
- * @author hollodotme
- */
 
 namespace hollodotme\FastCGI\Tests\Integration;
 
@@ -14,27 +11,28 @@ use hollodotme\FastCGI\Proxy;
 use hollodotme\FastCGI\Requests\PostRequest;
 use hollodotme\FastCGI\SocketConnections\NetworkSocket;
 use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
+use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
+use PHPUnit\Framework\Exception;
+use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 use function http_build_query;
-use function in_array;
 use function usleep;
 
-/**
- * Class ProxyTest
- * @package hollodotme\FastCGI\Tests\Integration
- */
 final class RandomProxyTest extends TestCase
 {
+	use SocketDataProviding;
+
 	private const WORKER = __DIR__ . '/Workers/worker.php';
 
 	/**
-	 * @throws \PHPUnit\Framework\ExpectationFailedException
-	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 * @throws Exception
+	 * @throws ExpectationFailedException
 	 */
 	public function testCanSendSynchronousRequests() : void
 	{
 		$proxy = $this->getProxy();
 
+		/** @noinspection RepetitiveMethodCallsInspection */
 		$responses = [
 			$proxy->sendRequest( $this->getRequest() )->getBody(),
 			$proxy->sendRequest( $this->getRequest() )->getBody(),
@@ -59,7 +57,7 @@ final class RandomProxyTest extends TestCase
 			],
 		];
 
-		$this->assertTrue( in_array( $responses, $expectedResponses, false ) );
+		$this->assertContains( $responses, $expectedResponses );
 	}
 
 	private function getProxy() : Proxy
@@ -76,8 +74,13 @@ final class RandomProxyTest extends TestCase
 	private function getConnections() : array
 	{
 		return [
-			new NetworkSocket( '127.0.0.1', 9001 ),
-			new UnixDomainSocket( '/var/run/php-uds.sock' ),
+			new NetworkSocket(
+				$this->getNetworkSocketHost(),
+				$this->getNetworkSocketPort()
+			),
+			new UnixDomainSocket(
+				$this->getUnixDomainSocket()
+			),
 		];
 	}
 
@@ -93,10 +96,11 @@ final class RandomProxyTest extends TestCase
 	{
 		$test     = $this;
 		$proxy    = $this->getProxy();
-		$callback = function ( ProvidesResponseData $response ) use ( $test )
+		$callback = static function ( ProvidesResponseData $response ) use ( $test )
 		{
-			$test->assertTrue(
-				in_array( $response->getBody(), ['Unit-Test-network-socket', 'Unit-Test-unix-domain-socket'], true )
+			$test->assertContains(
+				$response->getBody(),
+				['Unit-Test-network-socket', 'Unit-Test-unix-domain-socket']
 			);
 		};
 
@@ -108,8 +112,7 @@ final class RandomProxyTest extends TestCase
 	}
 
 	/**
-	 * @throws \PHPUnit\Framework\ExpectationFailedException
-	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 * @throws ExpectationFailedException
 	 */
 	public function testCanCheckIfProxyHasResponse() : void
 	{
@@ -128,10 +131,11 @@ final class RandomProxyTest extends TestCase
 	{
 		$test     = $this;
 		$proxy    = $this->getProxy();
-		$callback = function ( ProvidesResponseData $response ) use ( $test )
+		$callback = static function ( ProvidesResponseData $response ) use ( $test )
 		{
-			$test->assertTrue(
-				in_array( $response->getBody(), ['Unit-Test-network-socket', 'Unit-Test-unix-domain-socket'], true )
+			$test->assertContains(
+				$response->getBody(),
+				['Unit-Test-network-socket', 'Unit-Test-unix-domain-socket']
 			);
 		};
 
@@ -156,8 +160,8 @@ final class RandomProxyTest extends TestCase
 	}
 
 	/**
-	 * @throws \PHPUnit\Framework\ExpectationFailedException
-	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 * @throws Exception
+	 * @throws ExpectationFailedException
 	 */
 	public function testCanReadResponses() : void
 	{
@@ -174,13 +178,13 @@ final class RandomProxyTest extends TestCase
 
 		foreach ( $proxy->readResponses( null, $requestId1, $requestId2, $requestId3, $requestId4 ) as $response )
 		{
-			$this->assertTrue( in_array( $response->getBody(), $expectedResponses, true ) );
+			$this->assertContains( $response->getBody(), $expectedResponses );
 		}
 	}
 
 	/**
-	 * @throws \PHPUnit\Framework\ExpectationFailedException
-	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
+	 * @throws Exception
+	 * @throws ExpectationFailedException
 	 */
 	public function testCanReadReadyResponses() : void
 	{
@@ -199,7 +203,7 @@ final class RandomProxyTest extends TestCase
 		{
 			foreach ( $proxy->readReadyResponses() as $response )
 			{
-				$this->assertTrue( in_array( $response->getBody(), $expectedResponses, true ) );
+				$this->assertContains( $response->getBody(), $expectedResponses );
 			}
 		}
 	}

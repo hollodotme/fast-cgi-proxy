@@ -1,27 +1,23 @@
 <?php declare(strict_types=1);
-/**
- * @author hollodotme
- */
 
 namespace hollodotme\FastCGI\Tests\Unit\Collections;
 
 use hollodotme\FastCGI\Client;
 use hollodotme\FastCGI\Collections\Random;
+use hollodotme\FastCGI\Exceptions\ClientNotFoundException;
 use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
 use hollodotme\FastCGI\SocketConnections\NetworkSocket;
 use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
+use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
 use PHPUnit\Framework\TestCase;
-use function in_array;
 
-/**
- * Class RandomTest
- * @package hollodotme\FastCGI\Tests\Unit\Collections
- */
 final class RandomTest extends TestCase
 {
+	use SocketDataProviding;
+
 	/**
 	 * @throws MissingConnectionsException
-	 * @throws \hollodotme\FastCGI\Exceptions\ClientNotFoundException
+	 * @throws ClientNotFoundException
 	 */
 	public function testThrowsExceptionWhenAttemptToGetClientFromEmptyCollection() : void
 	{
@@ -29,27 +25,33 @@ final class RandomTest extends TestCase
 
 		$this->expectException( MissingConnectionsException::class );
 
+		/** @noinspection UnusedFunctionResultInspection */
 		$random->getClient();
 	}
 
 	/**
+	 * @throws ClientNotFoundException
 	 * @throws MissingConnectionsException
-	 * @throws \PHPUnit\Framework\ExpectationFailedException
-	 * @throws \SebastianBergmann\RecursionContext\InvalidArgumentException
-	 * @throws \hollodotme\FastCGI\Exceptions\ClientNotFoundException
 	 */
 	public function testCanAddConnections() : void
 	{
-		$random      = new Random();
-		$connection1 = new NetworkSocket( '127.0.0.1', 9001 );
-		$connection2 = new UnixDomainSocket( '/var/run/php-uds.sock' );
+		$random           = new Random();
+		$networkSocket    = new NetworkSocket(
+			$this->getNetworkSocketHost(),
+			$this->getNetworkSocketPort()
+		);
+		$unixDomainSocket = new UnixDomainSocket(
+			$this->getUnixDomainSocket()
+		);
 
-		$client1 = new Client( $connection1 );
-		$client2 = new Client( $connection2 );
+		$networkSocketClient    = new Client( $networkSocket );
+		$unixDomainSocketClient = new Client( $unixDomainSocket );
 
-		$random->add( $connection1, $connection2 );
+		$random->add( $networkSocket, $unixDomainSocket );
 
-		$this->assertInstanceOf( Client::class, $random->getClient() );
-		$this->assertTrue( in_array( $random->getClient(), [$client1, $client2], false ) );
+		$this->assertContainsEquals(
+			$random->getClient(),
+			[$networkSocketClient, $unixDomainSocketClient]
+		);
 	}
 }

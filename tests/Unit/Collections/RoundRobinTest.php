@@ -1,46 +1,59 @@
 <?php declare(strict_types=1);
-/**
- * @author hollodotme
- */
 
 namespace hollodotme\FastCGI\Tests\Unit\Collections;
 
 use hollodotme\FastCGI\Client;
 use hollodotme\FastCGI\Collections\RoundRobin;
+use hollodotme\FastCGI\Exceptions\ClientNotFoundException;
 use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
 use hollodotme\FastCGI\SocketConnections\NetworkSocket;
 use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
+use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
+use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Class RoundRobinTest
- * @package hollodotme\FastCGI\Tests\Unit\Collections
- */
 final class RoundRobinTest extends TestCase
 {
+	use SocketDataProviding;
+
+	/**
+	 * @throws ClientNotFoundException
+	 * @throws MissingConnectionsException
+	 */
 	public function testThrowsExceptionWhenAttemptToGetClientFromEmptyCollection() : void
 	{
 		$roundRobin = new RoundRobin();
 
 		$this->expectException( MissingConnectionsException::class );
 
+		/** @noinspection UnusedFunctionResultInspection */
 		$roundRobin->getClient();
 	}
 
+	/**
+	 * @throws MissingConnectionsException
+	 * @throws ExpectationFailedException
+	 * @throws ClientNotFoundException
+	 */
 	public function testCanAddConnections() : void
 	{
-		$roundRobin  = new RoundRobin();
-		$connection1 = new NetworkSocket( '127.0.0.1', 9001 );
-		$connection2 = new UnixDomainSocket( '/var/run/php-uds.sock' );
+		$roundRobin       = new RoundRobin();
+		$networkSocket    = new NetworkSocket(
+			$this->getNetworkSocketHost(),
+			$this->getNetworkSocketPort()
+		);
+		$unixDomainSocket = new UnixDomainSocket(
+			$this->getUnixDomainSocket()
+		);
 
-		$client1 = new Client( $connection1 );
-		$client2 = new Client( $connection2 );
+		$networkSocketClient    = new Client( $networkSocket );
+		$unixDomainSocketClient = new Client( $unixDomainSocket );
 
-		$roundRobin->add( $connection1, $connection2 );
+		$roundRobin->add( $networkSocket, $unixDomainSocket );
 
-		$this->assertInstanceOf( Client::class, $roundRobin->getClient() );
-		$this->assertEquals( $client2, $roundRobin->getClient() );
-		$this->assertEquals( $client1, $roundRobin->getClient() );
-		$this->assertEquals( $client2, $roundRobin->getClient() );
+		$this->assertEquals( $networkSocketClient, $roundRobin->getClient() );
+		$this->assertEquals( $unixDomainSocketClient, $roundRobin->getClient() );
+		$this->assertEquals( $networkSocketClient, $roundRobin->getClient() );
+		$this->assertEquals( $unixDomainSocketClient, $roundRobin->getClient() );
 	}
 }
