@@ -33,10 +33,15 @@
   },
   "extra": {
     "tools": {
-      "phpunit": {
+      "phpunit7": {
+        "url": "https://phar.phpunit.de/phpunit-7.phar",
+        "replace": true,
+        "only-dev": true
+      },
+      "phpunit8": {
         "url": "https://phar.phpunit.de/phpunit-scoped-8.phar",
-        "only-dev": true,
-        "replace": true
+        "replace": true,
+        "only-dev": true
       }
     }
   }
