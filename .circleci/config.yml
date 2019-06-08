@@ -102,9 +102,16 @@ shared-linting: &shared-linting
         at: /repo
 
     - run:
-        name: Check for PHP parse errors
+        name: Check for PHP parse errors in src/
         command: >
           find ./src -type f -name '*.php' -print0
+          | xargs -0 -n1 -P4 php -l -n
+          | (! grep -v "No syntax errors detected" )
+
+    - run:
+        name: Check for PHP parse errors in tests/
+        command: >
+          find ./tests -type f -name '*.php' -print0
           | xargs -0 -n1 -P4 php -l -n
           | (! grep -v "No syntax errors detected" )
 
