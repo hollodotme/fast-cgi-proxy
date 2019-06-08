@@ -1,7 +1,7 @@
-[![Build Status](https://travis-ci.org/hollodotme/fast-cgi-proxy.svg?branch=master)](https://travis-ci.org/hollodotme/fast-cgi-proxy)
+[![CircleCI](https://circleci.com/gh/hollodotme/fast-cgi-proxy.svg?style=svg)](https://circleci.com/gh/hollodotme/fast-cgi-proxy)
 [![Latest Stable Version](https://poser.pugx.org/hollodotme/fast-cgi-proxy/v/stable)](https://packagist.org/packages/hollodotme/fast-cgi-proxy) 
 [![Total Downloads](https://poser.pugx.org/hollodotme/fast-cgi-proxy/downloads)](https://packagist.org/packages/hollodotme/fast-cgi-proxy) 
-[![Coverage Status](https://coveralls.io/repos/github/hollodotme/fast-cgi-proxy/badge.svg?branch=master)](https://coveralls.io/github/hollodotme/fast-cgi-proxy?branch=master)
+[![codecov](https://codecov.io/gh/hollodotme/fast-cgi-proxy/branch/master/graph/badge.svg)](https://codecov.io/gh/hollodotme/fast-cgi-proxy)
 
 # FastCGI Proxy
 
