@@ -4,6 +4,10 @@ namespace hollodotme\FastCGI\Tests\Integration;
 
 use Closure;
 use hollodotme\FastCGI\Collections\Random;
+use hollodotme\FastCGI\Exceptions\ConnectException;
+use hollodotme\FastCGI\Exceptions\ReadFailedException;
+use hollodotme\FastCGI\Exceptions\TimedoutException;
+use hollodotme\FastCGI\Exceptions\WriteFailedException;
 use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
 use hollodotme\FastCGI\Interfaces\ProvidesRequestData;
 use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
@@ -15,6 +19,8 @@ use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
 use PHPUnit\Framework\Exception;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
+use SebastianBergmann\RecursionContext\InvalidArgumentException;
+use Throwable;
 use function http_build_query;
 use function usleep;
 
@@ -27,6 +33,12 @@ final class RandomProxyTest extends TestCase
 	/**
 	 * @throws Exception
 	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws Throwable
+	 * @throws ConnectException
+	 * @throws ReadFailedException
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
 	 */
 	public function testCanSendSynchronousRequests() : void
 	{
@@ -63,7 +75,7 @@ final class RandomProxyTest extends TestCase
 	private function getProxy() : Proxy
 	{
 		$random = new Random();
-		$random->add( ...$this->getConnections() );
+		$random->addConnections( ...$this->getConnections() );
 
 		return new Proxy( $random );
 	}
@@ -92,6 +104,12 @@ final class RandomProxyTest extends TestCase
 		);
 	}
 
+	/**
+	 * @throws ConnectException
+	 * @throws ReadFailedException
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
+	 */
 	public function testCanWaitForResponse() : void
 	{
 		$test     = $this;
@@ -112,7 +130,12 @@ final class RandomProxyTest extends TestCase
 	}
 
 	/**
+	 * @throws ConnectException
 	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws ReadFailedException
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
 	 */
 	public function testCanCheckIfProxyHasResponse() : void
 	{
@@ -127,6 +150,12 @@ final class RandomProxyTest extends TestCase
 		$this->assertTrue( $proxy->hasResponse( $requestId2 ) );
 	}
 
+	/**
+	 * @throws ConnectException
+	 * @throws ReadFailedException
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
+	 */
 	public function testCanWaitForResponses() : void
 	{
 		$test     = $this;
@@ -160,8 +189,14 @@ final class RandomProxyTest extends TestCase
 	}
 
 	/**
+	 * @throws ConnectException
 	 * @throws Exception
 	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws ReadFailedException
+	 * @throws Throwable
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
 	 */
 	public function testCanReadResponses() : void
 	{
@@ -183,8 +218,14 @@ final class RandomProxyTest extends TestCase
 	}
 
 	/**
+	 * @throws ConnectException
 	 * @throws Exception
 	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws ReadFailedException
+	 * @throws Throwable
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
 	 */
 	public function testCanReadReadyResponses() : void
 	{

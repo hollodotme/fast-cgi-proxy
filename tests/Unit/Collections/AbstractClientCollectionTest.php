@@ -13,14 +13,14 @@ final class AbstractClientCollectionTest extends TestCase
 	{
 		$collection = new class extends AbstractClientCollection
 		{
-			public function getClient() : Client
+			public function getNextClient() : Client
 			{
-				return $this->getClientWithIndex( 0 );
+				return $this->getClientAtIndex( 0 );
 			}
 		};
 
 		$this->expectException( ClientNotFoundException::class );
 
-		$collection->getClient();
+		$collection->getNextClient();
 	}
 }

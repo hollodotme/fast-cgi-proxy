@@ -1,34 +1,27 @@
 <?php declare(strict_types=1);
-/**
- * @author hollodotme
- */
 
 namespace hollodotme\FastCGI\Collections;
 
+use Exception;
 use hollodotme\FastCGI\Client;
 use hollodotme\FastCGI\Exceptions\ClientNotFoundException;
 use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
-use function reset;
-use function shuffle;
+use function random_int;
 
-/**
- * Class Random
- * @package hollodotme\FastCGI\Collections
- */
 final class Random extends AbstractClientCollection
 {
 	/**
-	 * @throws ClientNotFoundException
-	 * @throws MissingConnectionsException
 	 * @return Client
+	 * @throws MissingConnectionsException
+	 * @throws Exception
+	 * @throws ClientNotFoundException
 	 */
-	public function getClient() : Client
+	public function getNextClient() : Client
 	{
 		$this->guardHasClients();
 
-		$indices = $this->getIndices();
-		shuffle( $indices );
+		$index = random_int( 0, $this->count() - 1 );
 
-		return $this->getClientWithIndex( reset( $indices ) );
+		return $this->getClientAtIndex( $index );
 	}
 }

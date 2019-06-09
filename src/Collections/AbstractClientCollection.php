@@ -1,7 +1,4 @@
 <?php declare(strict_types=1);
-/**
- * @author hollodotme
- */
 
 namespace hollodotme\FastCGI\Collections;
 
@@ -10,20 +7,18 @@ use hollodotme\FastCGI\Exceptions\ClientNotFoundException;
 use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
 use hollodotme\FastCGI\Interfaces\CollectsSocketConnections;
 use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
-use hollodotme\FastCGI\Interfaces\ProvidesClients;
-use function array_keys;
+use hollodotme\FastCGI\Interfaces\ProvidesNextClient;
 use function count;
 
-/**
- * Class AbstractClientCollection
- * @package hollodotme\FastCGI\Collections
- */
-abstract class AbstractClientCollection implements CollectsSocketConnections, ProvidesClients
+abstract class AbstractClientCollection implements CollectsSocketConnections, ProvidesNextClient
 {
 	/** @var array|Client[] */
 	private $clients = [];
 
-	public function add( ConfiguresSocketConnection $connection, ConfiguresSocketConnection ...$connections ) : void
+	public function addConnections(
+		ConfiguresSocketConnection $connection,
+		ConfiguresSocketConnection ...$connections
+	) : void
 	{
 		$this->clients[] = new Client( $connection );
 
@@ -33,12 +28,7 @@ abstract class AbstractClientCollection implements CollectsSocketConnections, Pr
 		}
 	}
 
-	final protected function getIndices() : array
-	{
-		return array_keys( $this->clients );
-	}
-
-	final protected function countClients() : int
+	final public function count() : int
 	{
 		return count( $this->clients );
 	}
@@ -46,10 +36,10 @@ abstract class AbstractClientCollection implements CollectsSocketConnections, Pr
 	/**
 	 * @param int $index
 	 *
-	 * @throws ClientNotFoundException
 	 * @return Client
+	 * @throws ClientNotFoundException
 	 */
-	final protected function getClientWithIndex( int $index ) : Client
+	final protected function getClientAtIndex( int $index ) : Client
 	{
 		if ( !isset( $this->clients[ $index ] ) )
 		{
@@ -64,7 +54,7 @@ abstract class AbstractClientCollection implements CollectsSocketConnections, Pr
 	 */
 	final protected function guardHasClients() : void
 	{
-		if ( 0 === $this->countClients() )
+		if ( 0 === $this->count() )
 		{
 			throw new MissingConnectionsException( 'No connections/clients added to collection.' );
 		}

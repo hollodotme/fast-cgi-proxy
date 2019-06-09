@@ -4,6 +4,10 @@ namespace hollodotme\FastCGI\Tests\Integration;
 
 use Closure;
 use hollodotme\FastCGI\Collections\RoundRobin;
+use hollodotme\FastCGI\Exceptions\ConnectException;
+use hollodotme\FastCGI\Exceptions\ReadFailedException;
+use hollodotme\FastCGI\Exceptions\TimedoutException;
+use hollodotme\FastCGI\Exceptions\WriteFailedException;
 use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
 use hollodotme\FastCGI\Interfaces\ProvidesRequestData;
 use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
@@ -15,6 +19,8 @@ use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
 use PHPUnit\Framework\Exception;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
+use SebastianBergmann\RecursionContext\InvalidArgumentException;
+use Throwable;
 use function http_build_query;
 use function usleep;
 
@@ -26,6 +32,12 @@ final class RoundRobinProxyTest extends TestCase
 
 	/**
 	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws Throwable
+	 * @throws ConnectException
+	 * @throws ReadFailedException
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
 	 */
 	public function testCanSendSynchronousRequests() : void
 	{
@@ -52,7 +64,7 @@ final class RoundRobinProxyTest extends TestCase
 	private function getProxy() : Proxy
 	{
 		$roundRobin = new RoundRobin();
-		$roundRobin->add( ...$this->getConnections() );
+		$roundRobin->addConnections( ...$this->getConnections() );
 
 		return new Proxy( $roundRobin );
 	}
@@ -81,6 +93,12 @@ final class RoundRobinProxyTest extends TestCase
 		);
 	}
 
+	/**
+	 * @throws ConnectException
+	 * @throws ReadFailedException
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
+	 */
 	public function testCanWaitForResponse() : void
 	{
 		$test      = $this;
@@ -102,7 +120,12 @@ final class RoundRobinProxyTest extends TestCase
 	}
 
 	/**
+	 * @throws ConnectException
 	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws ReadFailedException
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
 	 */
 	public function testCanCheckIfProxyHasResponse() : void
 	{
@@ -117,6 +140,12 @@ final class RoundRobinProxyTest extends TestCase
 		$this->assertTrue( $proxy->hasResponse( $requestId2 ) );
 	}
 
+	/**
+	 * @throws ConnectException
+	 * @throws ReadFailedException
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
+	 */
 	public function testCanWaitForResponses() : void
 	{
 		$test      = $this;
@@ -152,7 +181,13 @@ final class RoundRobinProxyTest extends TestCase
 	}
 
 	/**
+	 * @throws ConnectException
 	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws ReadFailedException
+	 * @throws Throwable
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
 	 */
 	public function testCanReadResponses() : void
 	{
@@ -179,8 +214,14 @@ final class RoundRobinProxyTest extends TestCase
 	}
 
 	/**
-	 * @throws ExpectationFailedException
+	 * @throws ConnectException
 	 * @throws Exception
+	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws ReadFailedException
+	 * @throws Throwable
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
 	 */
 	public function testCanReadReadyResponses() : void
 	{

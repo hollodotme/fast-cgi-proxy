@@ -4,7 +4,7 @@ namespace hollodotme\FastCGI;
 
 use Generator;
 use hollodotme\FastCGI\Exceptions\ReadFailedException;
-use hollodotme\FastCGI\Interfaces\ProvidesClients;
+use hollodotme\FastCGI\Interfaces\ProvidesNextClient;
 use hollodotme\FastCGI\Interfaces\ProvidesRequestData;
 use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
 use Throwable;
@@ -13,13 +13,13 @@ use function in_array;
 
 class Proxy
 {
-	/** @var ProvidesClients */
+	/** @var ProvidesNextClient */
 	private $collection;
 
 	/** @var array|Client[] */
 	private $requestIdClientMap;
 
-	public function __construct( ProvidesClients $collection )
+	public function __construct( ProvidesNextClient $collection )
 	{
 		$this->collection         = $collection;
 		$this->requestIdClientMap = [];
@@ -35,7 +35,7 @@ class Proxy
 	 */
 	public function sendAsyncRequest( ProvidesRequestData $request ) : int
 	{
-		$client    = $this->collection->getClient();
+		$client    = $this->collection->getNextClient();
 		$requestId = $client->sendAsyncRequest( $request );
 
 		$this->mapRequestIdToClient( $requestId, $client );

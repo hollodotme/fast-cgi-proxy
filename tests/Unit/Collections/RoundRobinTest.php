@@ -11,6 +11,7 @@ use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
 use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
+use SebastianBergmann\RecursionContext\InvalidArgumentException;
 
 final class RoundRobinTest extends TestCase
 {
@@ -27,13 +28,14 @@ final class RoundRobinTest extends TestCase
 		$this->expectException( MissingConnectionsException::class );
 
 		/** @noinspection UnusedFunctionResultInspection */
-		$roundRobin->getClient();
+		$roundRobin->getNextClient();
 	}
 
 	/**
-	 * @throws MissingConnectionsException
-	 * @throws ExpectationFailedException
 	 * @throws ClientNotFoundException
+	 * @throws ExpectationFailedException
+	 * @throws MissingConnectionsException
+	 * @throws InvalidArgumentException
 	 */
 	public function testCanAddConnections() : void
 	{
@@ -49,11 +51,11 @@ final class RoundRobinTest extends TestCase
 		$networkSocketClient    = new Client( $networkSocket );
 		$unixDomainSocketClient = new Client( $unixDomainSocket );
 
-		$roundRobin->add( $networkSocket, $unixDomainSocket );
+		$roundRobin->addConnections( $networkSocket, $unixDomainSocket );
 
-		$this->assertEquals( $networkSocketClient, $roundRobin->getClient() );
-		$this->assertEquals( $unixDomainSocketClient, $roundRobin->getClient() );
-		$this->assertEquals( $networkSocketClient, $roundRobin->getClient() );
-		$this->assertEquals( $unixDomainSocketClient, $roundRobin->getClient() );
+		$this->assertEquals( $networkSocketClient, $roundRobin->getNextClient() );
+		$this->assertEquals( $unixDomainSocketClient, $roundRobin->getNextClient() );
+		$this->assertEquals( $networkSocketClient, $roundRobin->getNextClient() );
+		$this->assertEquals( $unixDomainSocketClient, $roundRobin->getNextClient() );
 	}
 }

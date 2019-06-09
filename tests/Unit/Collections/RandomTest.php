@@ -30,7 +30,7 @@ final class RandomTest extends TestCase
 		$this->expectException( MissingConnectionsException::class );
 
 		/** @noinspection UnusedFunctionResultInspection */
-		$random->getClient();
+		$random->getNextClient();
 	}
 
 	/**
@@ -54,10 +54,10 @@ final class RandomTest extends TestCase
 		$networkSocketClient    = new Client( $networkSocket );
 		$unixDomainSocketClient = new Client( $unixDomainSocket );
 
-		$random->add( $networkSocket, $unixDomainSocket );
+		$random->addConnections( $networkSocket, $unixDomainSocket );
 
 		$this->assertContainsEqualObjects(
-			$random->getClient(),
+			$random->getNextClient(),
 			[$networkSocketClient, $unixDomainSocketClient]
 		);
 	}
