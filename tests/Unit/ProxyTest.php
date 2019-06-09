@@ -28,12 +28,11 @@ final class ProxyTest extends TestCase
 	 */
 	public function testConnectAttemptToNotExistingSocketThrowsException() : void
 	{
-		$collection = new RoundRobin();
-		$collection->addConnections(
+		$roundRobin = RoundRobin::fromConnections(
 			new UnixDomainSocket( '/tmp/not/existing.sock' )
 		);
 
-		$proxy = new Proxy( $collection );
+		$proxy = new Proxy( $roundRobin );
 
 		$this->expectException( ConnectException::class );
 
@@ -51,10 +50,11 @@ final class ProxyTest extends TestCase
 	public function testConnectAttemptToInvalidSocketThrowsException() : void
 	{
 		$testSocket = realpath( __DIR__ . '/Fixtures/test.sock' );
-		$collection = new RoundRobin();
-		$collection->addConnections( new UnixDomainSocket( $testSocket ) );
+		$roundRobin = RoundRobin::fromConnections(
+			new UnixDomainSocket( $testSocket )
+		);
 
-		$proxy = new Proxy( $collection );
+		$proxy = new Proxy( $roundRobin );
 
 		$this->expectException( ConnectException::class );
 
@@ -67,15 +67,14 @@ final class ProxyTest extends TestCase
 	 */
 	public function testWaitingForUnknownRequestThrowsException() : void
 	{
-		$collection = new RoundRobin();
-		$collection->addConnections(
+		$roundRobin = RoundRobin::fromConnections(
 			new NetworkSocket(
 				$this->getNetworkSocketHost(),
 				$this->getNetworkSocketPort()
 			)
 		);
 
-		$proxy = new Proxy( $collection );
+		$proxy = new Proxy( $roundRobin );
 
 		$this->expectException( ReadFailedException::class );
 		$this->expectExceptionMessage( 'Client not found for request ID: 12345' );
@@ -88,15 +87,14 @@ final class ProxyTest extends TestCase
 	 */
 	public function testHandlingUnknownRequestThrowsException() : void
 	{
-		$collection = new RoundRobin();
-		$collection->addConnections(
+		$roundRobin = RoundRobin::fromConnections(
 			new NetworkSocket(
 				$this->getNetworkSocketHost(),
 				$this->getNetworkSocketPort()
 			)
 		);
 
-		$proxy = new Proxy( $collection );
+		$proxy = new Proxy( $roundRobin );
 
 		$this->expectException( ReadFailedException::class );
 		$this->expectExceptionMessage( 'Client not found for request ID: 12345' );
@@ -109,15 +107,15 @@ final class ProxyTest extends TestCase
 	 */
 	public function testHandlingUnknownRequestsThrowsException() : void
 	{
-		$collection = new RoundRobin();
-		$collection->addConnections(
+		$roundRobin = RoundRobin::fromConnections(
 			new NetworkSocket(
 				$this->getNetworkSocketHost(),
 				$this->getNetworkSocketPort()
 			)
+
 		);
 
-		$proxy = new Proxy( $collection );
+		$proxy = new Proxy( $roundRobin );
 
 		$this->expectException( ReadFailedException::class );
 		$this->expectExceptionMessage( 'Client not found for request ID: 12345' );

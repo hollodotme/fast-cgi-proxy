@@ -17,6 +17,7 @@ use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
 use SebastianBergmann\RecursionContext\InvalidArgumentException;
+use Throwable;
 use function http_build_query;
 
 final class ClusterProxyTest extends TestCase
@@ -28,8 +29,7 @@ final class ClusterProxyTest extends TestCase
 
 	protected function setUp() : void
 	{
-		$cluster = new Cluster();
-		$cluster->addConnections(
+		$cluster = Cluster::fromConnections(
 			new NetworkSocket(
 				$this->getNetworkSocketHost(),
 				$this->getNetworkSocketPort()
@@ -144,7 +144,7 @@ final class ClusterProxyTest extends TestCase
 	 * @throws ReadFailedException
 	 * @throws TimedoutException
 	 * @throws WriteFailedException
-	 * @throws \Throwable
+	 * @throws Throwable
 	 */
 	public function testReadReadyResponses() : void
 	{

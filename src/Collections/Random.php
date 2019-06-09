@@ -4,24 +4,49 @@ namespace hollodotme\FastCGI\Collections;
 
 use Exception;
 use hollodotme\FastCGI\Client;
-use hollodotme\FastCGI\Exceptions\ClientNotFoundException;
-use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
+use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
+use hollodotme\FastCGI\Interfaces\ProvidesNextClient;
 use function random_int;
 
-final class Random extends AbstractClientCollection
+final class Random implements ProvidesNextClient
 {
+	/** @var array|Client[] */
+	private $clients = [];
+
+	private function __construct()
+	{
+	}
+
+	public static function fromConnections(
+		ConfiguresSocketConnection $connection,
+		ConfiguresSocketConnection ...$connections
+	) : self
+	{
+		$random = new self();
+
+		$random->clients[] = new Client( $connection );
+
+		foreach ( $connections as $conn )
+		{
+			$random->clients[] = new Client( $conn );
+		}
+
+		return $random;
+	}
+
 	/**
 	 * @return Client
-	 * @throws MissingConnectionsException
 	 * @throws Exception
-	 * @throws ClientNotFoundException
 	 */
 	public function getNextClient() : Client
 	{
-		$this->guardHasClients();
-
 		$index = random_int( 0, $this->count() - 1 );
 
-		return $this->getClientAtIndex( $index );
+		return $this->clients[ $index ];
+	}
+
+	public function count() : int
+	{
+		return count( $this->clients );
 	}
 }

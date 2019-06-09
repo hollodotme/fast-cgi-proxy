@@ -21,18 +21,9 @@ class ClusterProxy
 	public function __construct( ProvidesConnections $cluster )
 	{
 		$this->cluster = $cluster;
-		$this->proxy   = new Proxy( $this->getRoundRobinFromCluster() );
-	}
-
-	private function getRoundRobinFromCluster() : RoundRobin
-	{
-		$roundRobin = new RoundRobin();
-		foreach ( $this->cluster->getIterator() as $connection )
-		{
-			$roundRobin->addConnections( $connection );
-		}
-
-		return $roundRobin;
+		$this->proxy   = new Proxy(
+			RoundRobin::fromConnections( ...$this->cluster->getIterator() )
+		);
 	}
 
 	/**

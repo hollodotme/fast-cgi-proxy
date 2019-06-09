@@ -2,26 +2,33 @@
 
 namespace hollodotme\FastCGI\Collections;
 
-use hollodotme\FastCGI\Interfaces\CollectsSocketConnections;
 use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
 use hollodotme\FastCGI\Interfaces\ProvidesConnections;
 use Iterator;
 
-final class Cluster implements CollectsSocketConnections, ProvidesConnections
+final class Cluster implements ProvidesConnections
 {
 	private $connections = [];
 
-	public function addConnections(
+	private function __construct()
+	{
+	}
+
+	public static function fromConnections(
 		ConfiguresSocketConnection $connection,
 		ConfiguresSocketConnection ...$connections
-	) : void
+	) : self
 	{
-		$this->connections[] = $connection;
+		$cluster = new self();
+
+		$cluster->connections[] = $connection;
 
 		foreach ( $connections as $conn )
 		{
-			$this->connections[] = $conn;
+			$cluster->connections[] = $conn;
 		}
+
+		return $cluster;
 	}
 
 	public function getIterator() : Iterator
@@ -29,7 +36,7 @@ final class Cluster implements CollectsSocketConnections, ProvidesConnections
 		yield from $this->connections;
 	}
 
-	public function count()
+	public function count() : int
 	{
 		return count( $this->connections );
 	}

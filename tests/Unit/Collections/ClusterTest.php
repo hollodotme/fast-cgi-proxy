@@ -13,35 +13,6 @@ use function iterator_to_array;
 
 final class ClusterTest extends TestCase
 {
-	/** @var Cluster */
-	private $cluster;
-
-	protected function setUp() : void
-	{
-		$this->cluster = new Cluster();
-	}
-
-	protected function tearDown() : void
-	{
-		$this->cluster = null;
-	}
-
-	/**
-	 * @throws Exception
-	 * @throws ExpectationFailedException
-	 * @throws InvalidArgumentException
-	 */
-	public function testAddConnections() : void
-	{
-		$this->cluster->addConnections(
-			new NetworkSocket( 'localhost', 9000 ),
-			new NetworkSocket( 'localhost', 9001 ),
-			new UnixDomainSocket( '/var/run/php/fpm.sock' )
-		);
-
-		$this->assertCount( 3, $this->cluster );
-	}
-
 	/**
 	 * @throws ExpectationFailedException
 	 * @throws InvalidArgumentException
@@ -51,11 +22,11 @@ final class ClusterTest extends TestCase
 		$networkSocket    = new NetworkSocket( 'localhost', 9000 );
 		$unixDomainSocket = new UnixDomainSocket( '/var/run/php/fpm.sock' );
 
-		$this->cluster->addConnections( $networkSocket, $unixDomainSocket );
+		$cluster = Cluster::fromConnections( $networkSocket, $unixDomainSocket );
 
 		$expectedConnections = [$networkSocket, $unixDomainSocket];
 
-		$connections = iterator_to_array( $this->cluster->getIterator(), false );
+		$connections = iterator_to_array( $cluster->getIterator(), false );
 
 		$this->assertSame( $expectedConnections, $connections );
 	}
@@ -67,7 +38,12 @@ final class ClusterTest extends TestCase
 	 */
 	public function testCount() : void
 	{
-		$this->assertSame( 0, $this->cluster->count() );
-		$this->assertCount( 0, $this->cluster );
+		$cluster = Cluster::fromConnections(
+			new NetworkSocket( 'localhost', 9000 ),
+			new UnixDomainSocket( '/var/run/php/fpm.sock' )
+		);
+
+		$this->assertSame( 2, $cluster->count() );
+		$this->assertCount( 2, $cluster );
 	}
 }

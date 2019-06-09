@@ -1,32 +1,45 @@
 <?php declare(strict_types=1);
-/**
- * @author hollodotme
- */
 
 namespace hollodotme\FastCGI\Collections;
 
 use hollodotme\FastCGI\Client;
-use hollodotme\FastCGI\Exceptions\ClientNotFoundException;
-use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
+use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
+use hollodotme\FastCGI\Interfaces\ProvidesNextClient;
 
-/**
- * Class RoundRobinConnections
- * @package hollodotme\FastCGI\Collections
- */
-final class RoundRobin extends AbstractClientCollection
+final class RoundRobin implements ProvidesNextClient
 {
 	private $nextIndex = 0;
 
+	/** @var array|Client[] */
+	private $clients = [];
+
+	private function __construct()
+	{
+	}
+
+	public static function fromConnections(
+		ConfiguresSocketConnection $connection,
+		ConfiguresSocketConnection ...$connections
+	) : self
+	{
+		$roundRobin = new self();
+
+		$roundRobin->clients[] = new Client( $connection );
+
+		foreach ( $connections as $conn )
+		{
+			$roundRobin->clients[] = new Client( $conn );
+		}
+
+		return $roundRobin;
+	}
+
 	/**
 	 * @return Client
-	 * @throws MissingConnectionsException
-	 * @throws ClientNotFoundException
 	 */
 	public function getNextClient() : Client
 	{
-		$this->guardHasClients();
-
-		$client = $this->getClientAtIndex( $this->nextIndex );
+		$client = $this->clients[ $this->nextIndex ];
 
 		$this->updateIndex();
 
@@ -41,5 +54,10 @@ final class RoundRobin extends AbstractClientCollection
 		{
 			$this->nextIndex = 0;
 		}
+	}
+
+	public function count() : int
+	{
+		return count( $this->clients );
 	}
 }

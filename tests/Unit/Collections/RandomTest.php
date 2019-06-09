@@ -4,8 +4,6 @@ namespace hollodotme\FastCGI\Tests\Unit\Collections;
 
 use hollodotme\FastCGI\Client;
 use hollodotme\FastCGI\Collections\Random;
-use hollodotme\FastCGI\Exceptions\ClientNotFoundException;
-use hollodotme\FastCGI\Exceptions\MissingConnectionsException;
 use hollodotme\FastCGI\SocketConnections\NetworkSocket;
 use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
 use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
@@ -20,29 +18,13 @@ final class RandomTest extends TestCase
 	use SocketDataProviding;
 
 	/**
-	 * @throws MissingConnectionsException
-	 * @throws ClientNotFoundException
-	 */
-	public function testThrowsExceptionWhenAttemptToGetClientFromEmptyCollection() : void
-	{
-		$random = new Random();
-
-		$this->expectException( MissingConnectionsException::class );
-
-		/** @noinspection UnusedFunctionResultInspection */
-		$random->getNextClient();
-	}
-
-	/**
-	 * @throws ClientNotFoundException
 	 * @throws Exception
 	 * @throws ExpectationFailedException
 	 * @throws InvalidArgumentException
-	 * @throws MissingConnectionsException
+	 * @throws \Exception
 	 */
-	public function testCanAddConnections() : void
+	public function testCanGetNextClient() : void
 	{
-		$random           = new Random();
 		$networkSocket    = new NetworkSocket(
 			$this->getNetworkSocketHost(),
 			$this->getNetworkSocketPort()
@@ -51,10 +33,10 @@ final class RandomTest extends TestCase
 			$this->getUnixDomainSocket()
 		);
 
+		$random = Random::fromConnections( $networkSocket, $unixDomainSocket );
+
 		$networkSocketClient    = new Client( $networkSocket );
 		$unixDomainSocketClient = new Client( $unixDomainSocket );
-
-		$random->addConnections( $networkSocket, $unixDomainSocket );
 
 		$this->assertContainsEqualObjects(
 			$random->getNextClient(),
