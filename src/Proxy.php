@@ -1,19 +1,16 @@
 <?php declare(strict_types=1);
-/**
- * @author hollodotme
- */
 
 namespace hollodotme\FastCGI;
 
+use Generator;
 use hollodotme\FastCGI\Exceptions\ReadFailedException;
 use hollodotme\FastCGI\Interfaces\ProvidesClients;
 use hollodotme\FastCGI\Interfaces\ProvidesRequestData;
 use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
+use Throwable;
+use function count;
+use function in_array;
 
-/**
- * Class Proxy
- * @package hollodotme\FastCGI
- */
 class Proxy
 {
 	/** @var ProvidesClients */
@@ -28,6 +25,14 @@ class Proxy
 		$this->requestIdClientMap = [];
 	}
 
+	/**
+	 * @param ProvidesRequestData $request
+	 *
+	 * @return int
+	 * @throws Exceptions\TimedoutException
+	 * @throws Exceptions\WriteFailedException
+	 * @throws Exceptions\ConnectException
+	 */
 	public function sendAsyncRequest( ProvidesRequestData $request ) : int
 	{
 		$client    = $this->collection->getClient();
@@ -43,6 +48,16 @@ class Proxy
 		$this->requestIdClientMap[ $requestId ] = $client;
 	}
 
+	/**
+	 * @param ProvidesRequestData $request
+	 *
+	 * @return ProvidesResponseData
+	 * @throws Exceptions\TimedoutException
+	 * @throws Exceptions\WriteFailedException
+	 * @throws ReadFailedException
+	 * @throws Throwable
+	 * @throws Exceptions\ConnectException
+	 */
 	public function sendRequest( ProvidesRequestData $request ) : ProvidesResponseData
 	{
 		$requestId = $this->sendAsyncRequest( $request );
@@ -50,6 +65,12 @@ class Proxy
 		return $this->readResponse( $requestId );
 	}
 
+	/**
+	 * @param int $requestId
+	 *
+	 * @return Client
+	 * @throws ReadFailedException
+	 */
 	private function getClientForRequestId( int $requestId ) : Client
 	{
 		if ( !isset( $this->requestIdClientMap[ $requestId ] ) )
@@ -60,10 +81,18 @@ class Proxy
 		return $this->requestIdClientMap[ $requestId ];
 	}
 
+	/**
+	 * @param int      $requestId
+	 * @param int|null $timeoutMs
+	 *
+	 * @return ProvidesResponseData
+	 * @throws Throwable
+	 * @throws ReadFailedException
+	 */
 	public function readResponse( int $requestId, ?int $timeoutMs = null ) : ProvidesResponseData
 	{
-		$client   = $this->getClientForRequestId( $requestId );
-		$response = $client->readResponse( $requestId, $timeoutMs );
+		$response = $this->getClientForRequestId( $requestId )
+		                 ->readResponse( $requestId, $timeoutMs );
 
 		$this->removeRequestIdsFromMap( $requestId );
 
@@ -78,6 +107,12 @@ class Proxy
 		}
 	}
 
+	/**
+	 * @param int      $requestId
+	 * @param int|null $timeoutMs
+	 *
+	 * @throws ReadFailedException
+	 */
 	public function waitForResponse( int $requestId, ?int $timeoutMs = null ) : void
 	{
 		$client = $this->getClientForRequestId( $requestId );
@@ -87,6 +122,11 @@ class Proxy
 		$this->removeRequestIdsFromMap( $requestId );
 	}
 
+	/**
+	 * @param int|null $timeoutMs
+	 *
+	 * @throws ReadFailedException
+	 */
 	public function waitForResponses( ?int $timeoutMs = null ) : void
 	{
 		while ( $this->hasUnhandledResponses() )
@@ -100,7 +140,7 @@ class Proxy
 		$clients = [];
 		foreach ( $this->requestIdClientMap as $client )
 		{
-			if ( !\in_array( $client, $clients, true ) )
+			if ( !in_array( $client, $clients, true ) )
 			{
 				$clients[] = $client;
 			}
@@ -111,16 +151,24 @@ class Proxy
 
 	public function hasUnhandledResponses() : bool
 	{
-		return \count( $this->requestIdClientMap ) > 0;
+		return count( $this->requestIdClientMap ) > 0;
 	}
 
+	/**
+	 * @param int $requestId
+	 *
+	 * @return bool
+	 * @throws ReadFailedException
+	 */
 	public function hasResponse( int $requestId ) : bool
 	{
-		$client = $this->getClientForRequestId( $requestId );
-
-		return $client->hasResponse( $requestId );
+		return $this->getClientForRequestId( $requestId )->hasResponse( $requestId );
 	}
 
+	/**
+	 * @return array
+	 * @throws ReadFailedException
+	 */
 	public function getRequestIdsHavingResponse() : array
 	{
 		$requestIds = [];
@@ -139,11 +187,13 @@ class Proxy
 
 	/**
 	 * @param int|null $timeoutMs
-	 * @param int[]    ...$requestIds
+	 * @param int      ...$requestIds
 	 *
-	 * @return \Generator|ProvidesResponseData[]
+	 * @return Generator|ProvidesResponseData[]
+	 * @throws Throwable
+	 * @throws ReadFailedException
 	 */
-	public function readResponses( ?int $timeoutMs = null, int ...$requestIds ) : \Generator
+	public function readResponses( ?int $timeoutMs = null, int ...$requestIds ) : Generator
 	{
 		foreach ( $requestIds as $requestId )
 		{
@@ -154,9 +204,11 @@ class Proxy
 	/**
 	 * @param int|null $timeoutMs
 	 *
-	 * @return \Generator|ProvidesResponseData[]
+	 * @return Generator|ProvidesResponseData[]
+	 * @throws Throwable
+	 * @throws ReadFailedException
 	 */
-	public function readReadyResponses( ?int $timeoutMs = null ) : \Generator
+	public function readReadyResponses( ?int $timeoutMs = null ) : Generator
 	{
 		/** @var Client $client */
 		foreach ( $this->getClientsUnique() as $client )
@@ -165,6 +217,12 @@ class Proxy
 		}
 	}
 
+	/**
+	 * @param int      $requestId
+	 * @param int|null $timeoutMs
+	 *
+	 * @throws ReadFailedException
+	 */
 	public function handleResponse( int $requestId, ?int $timeoutMs = null ) : void
 	{
 		$client = $this->getClientForRequestId( $requestId );
@@ -174,6 +232,12 @@ class Proxy
 		$this->removeRequestIdsFromMap( $requestId );
 	}
 
+	/**
+	 * @param int|null $timeoutMs
+	 * @param int      ...$requestIds
+	 *
+	 * @throws ReadFailedException
+	 */
 	public function handleResponses( ?int $timeoutMs = null, int ...$requestIds ) : void
 	{
 		foreach ( $requestIds as $requestId )
@@ -182,6 +246,11 @@ class Proxy
 		}
 	}
 
+	/**
+	 * @param int|null $timeoutMs
+	 *
+	 * @throws ReadFailedException
+	 */
 	public function handleReadyResponses( ?int $timeoutMs = null ) : void
 	{
 		$this->handleResponses( $timeoutMs, ...$this->getRequestIdsHavingResponse() );
