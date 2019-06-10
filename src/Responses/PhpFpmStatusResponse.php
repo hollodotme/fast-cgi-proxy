@@ -6,6 +6,7 @@ use DateTimeImmutable;
 use Exception;
 use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
 use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
+use hollodotme\FastCGI\Interfaces\ProvidesServerStatus;
 use hollodotme\FastCGI\Responses\PhpFpm\Process;
 use hollodotme\FastCGI\Responses\PhpFpm\Status;
 use function array_filter;
@@ -14,7 +15,7 @@ use function explode;
 use function preg_match;
 use function trim;
 
-final class PhpFpmStatusResponse
+final class PhpFpmStatusResponse implements ProvidesServerStatus
 {
 	/** @var ProvidesResponseData */
 	private $response;

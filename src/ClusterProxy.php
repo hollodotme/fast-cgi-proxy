@@ -11,6 +11,7 @@ use hollodotme\FastCGI\Exceptions\WriteFailedException;
 use hollodotme\FastCGI\Interfaces\ProvidesConnections;
 use hollodotme\FastCGI\Interfaces\ProvidesRequestData;
 use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
+use hollodotme\FastCGI\Interfaces\ProvidesServerStatus;
 use hollodotme\FastCGI\Requests\GetRequest;
 use hollodotme\FastCGI\Responses\PhpFpmStatusResponse;
 use Throwable;
@@ -89,12 +90,12 @@ class ClusterProxy
 	 * @param string $statusEndpoint
 	 * @param string $responseClass
 	 *
-	 * @return array|ProvidesResponseData[]
-	 * @throws ReadFailedException
+	 * @return array|ProvidesServerStatus[]
 	 * @throws Throwable
 	 * @throws TimedoutException
 	 * @throws WriteFailedException
 	 * @throws ConnectException
+	 * @throws ReadFailedException
 	 */
 	public function getStatus( string $statusEndpoint, string $responseClass = PhpFpmStatusResponse::class ) : array
 	{
