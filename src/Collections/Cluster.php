@@ -31,6 +31,9 @@ final class Cluster implements ProvidesConnections
 		return $cluster;
 	}
 
+	/**
+	 * @return Iterator|ConfiguresSocketConnection[]
+	 */
 	public function getIterator() : Iterator
 	{
 		yield from $this->connections;
