@@ -4,7 +4,10 @@ namespace hollodotme\FastCGI\Tests\Unit\Responses;
 
 use DateTimeImmutable;
 use Exception;
+use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
 use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
+use hollodotme\FastCGI\Responses\PhpFpm\Process;
+use hollodotme\FastCGI\Responses\PhpFpm\Status;
 use hollodotme\FastCGI\Responses\PhpFpmStatusResponse;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
@@ -20,16 +23,10 @@ final class PhpFpmStatusResponseTest extends TestCase
 	public function testCanGetValuesFromOriginalResponse() : void
 	{
 		$response       = $this->getResponseMock();
-		$statusResponse = new PhpFpmStatusResponse( $response );
+		$connection     = $this->getConnectionMock();
+		$statusResponse = new PhpFpmStatusResponse( $response, $connection );
 
-		$this->assertSame( $response->getRequestId(), $statusResponse->getRequestId() );
-		$this->assertSame( $response->getHeaders(), $statusResponse->getHeaders() );
-		$this->assertSame( $response->getHeader( 'X-Powered-By' ), $statusResponse->getHeader( 'X-Powered-By' ) );
-		$this->assertSame( $response->getBody(), $statusResponse->getBody() );
-		$this->assertSame( $response->getError(), $statusResponse->getError() );
-		$this->assertSame( $response->getRawResponse(), $statusResponse->getRawResponse() );
-		$this->assertSame( $response->getOutput(), $statusResponse->getOutput() );
-		$this->assertSame( $response->getDuration(), $statusResponse->getDuration() );
+		$this->assertSame( $response, $statusResponse->getResponse() );
 	}
 
 	private function getResponseMock() : ProvidesResponseData
@@ -71,7 +68,37 @@ final class PhpFpmStatusResponseTest extends TestCase
 				       . "total processes:      3\n"
 				       . "max active processes: 21\n"
 				       . "max children reached: 4\n"
-				       . "slow requests:        10\n";
+				       . "slow requests:        10\n"
+				       . "\n"
+				       . "************************\n"
+				       . "pid:                  9\n"
+				       . "state:                Running\n"
+				       . "start time:           10/Jun/2019:14:56:45 +0000\n"
+				       . "start since:          6035\n"
+				       . "requests:             112\n"
+				       . "request duration:     163\n"
+				       . "request method:       GET\n"
+				       . "request URI:          /status?full\n"
+				       . "content length:       0\n"
+				       . "user:                 tester\n"
+				       . "script:               test-script.php\n"
+				       . "last request cpu:     0.12\n"
+				       . "last request memory:  12345\n"
+				       . "\n"
+				       . "************************\n"
+				       . "pid:                  10\n"
+				       . "state:                Idle\n"
+				       . "start time:           10/Jun/2019:14:56:45 +0000\n"
+				       . "start since:          6035\n"
+				       . "requests:             114\n"
+				       . "request duration:     206\n"
+				       . "request method:       -\n"
+				       . "request URI:          -\n"
+				       . "content length:       0\n"
+				       . "user:                 -\n"
+				       . "script:               -\n"
+				       . "last request cpu:     0.00\n"
+				       . "last request memory:  2097152\n";
 			}
 
 			public function getRawResponse() : string
@@ -99,7 +126,37 @@ final class PhpFpmStatusResponseTest extends TestCase
 				       . "total processes:      3\n"
 				       . "max active processes: 21\n"
 				       . "max children reached: 4\n"
-				       . "slow requests:        10\n";
+				       . "slow requests:        10\n"
+				       . "\n"
+				       . "************************\n"
+				       . "pid:                  9\n"
+				       . "state:                Running\n"
+				       . "start time:           10/Jun/2019:14:56:45 +0000\n"
+				       . "start since:          6035\n"
+				       . "requests:             112\n"
+				       . "request duration:     163\n"
+				       . "request method:       GET\n"
+				       . "request URI:          /status?full\n"
+				       . "content length:       0\n"
+				       . "user:                 tester\n"
+				       . "script:               test-script.php\n"
+				       . "last request cpu:     0.12\n"
+				       . "last request memory:  12345\n"
+				       . "\n"
+				       . "************************\n"
+				       . "pid:                  10\n"
+				       . "state:                Idle\n"
+				       . "start time:           10/Jun/2019:14:56:45 +0000\n"
+				       . "start since:          6035\n"
+				       . "requests:             114\n"
+				       . "request duration:     206\n"
+				       . "request method:       -\n"
+				       . "request URI:          -\n"
+				       . "content length:       0\n"
+				       . "user:                 -\n"
+				       . "script:               -\n"
+				       . "last request cpu:     0.00\n"
+				       . "last request memory:  2097152\n";
 			}
 
 			public function getError() : string
@@ -114,6 +171,27 @@ final class PhpFpmStatusResponseTest extends TestCase
 		};
 	}
 
+	private function getConnectionMock() : ConfiguresSocketConnection
+	{
+		return new class implements ConfiguresSocketConnection
+		{
+			public function getSocketAddress() : string
+			{
+				return 'tcp://127.0.0.1:9000';
+			}
+
+			public function getConnectTimeout() : int
+			{
+				return 5000;
+			}
+
+			public function getReadWriteTimeout() : int
+			{
+				return 5000;
+			}
+		};
+	}
+
 	/**
 	 * @throws ExpectationFailedException
 	 * @throws InvalidArgumentException
@@ -121,21 +199,95 @@ final class PhpFpmStatusResponseTest extends TestCase
 	 */
 	public function testCanGetParsedStatusData() : void
 	{
-		$statusResponse = new PhpFpmStatusResponse( $this->getResponseMock() );
+		$statusResponse = new PhpFpmStatusResponse(
+			$this->getResponseMock(),
+			$this->getConnectionMock()
+		);
 
-		$this->assertSame( 'network', $statusResponse->getPoolName() );
-		$this->assertSame( 'dynamic', $statusResponse->getProcessManager() );
-		$this->assertEquals( new DateTimeImmutable( '08/Jun/2019:16:39:36 +0000' ), $statusResponse->getStartTime() );
-		$this->assertSame( 88501, $statusResponse->getStartSince() );
-		$this->assertSame( 1383, $statusResponse->getAcceptedConnections() );
-		$this->assertSame( 6, $statusResponse->getListenQueue() );
-		$this->assertSame( 1, $statusResponse->getMaxListenQueue() );
-		$this->assertSame( 128, $statusResponse->getListenQueueLength() );
-		$this->assertSame( 2, $statusResponse->getIdleProcesses() );
-		$this->assertSame( 1, $statusResponse->getActiveProcesses() );
-		$this->assertSame( 3, $statusResponse->getTotalProcesses() );
-		$this->assertSame( 21, $statusResponse->getMaxActiveProcesses() );
-		$this->assertSame( 4, $statusResponse->getMaxChildrenReached() );
-		$this->assertSame( 10, $statusResponse->getSlowRequests() );
+		$expectedStatus = new Status(
+			[
+				'pool'                 => 'network',
+				'process manager'      => 'dynamic',
+				'start time'           => new DateTimeImmutable( '08/Jun/2019:16:39:36 +0000' ),
+				'start since'          => 88501,
+				'accepted conn'        => 1383,
+				'listen queue'         => 6,
+				'max listen queue'     => 1,
+				'listen queue len'     => 128,
+				'idle processes'       => 2,
+				'active processes'     => 1,
+				'total processes'      => 3,
+				'max active processes' => 21,
+				'max children reached' => 4,
+				'slow requests'        => 10,
+			]
+		);
+
+		$this->assertEquals( $expectedStatus, $statusResponse->getStatus() );
+	}
+
+	/**
+	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws Exception
+	 */
+	public function testCanGetConnectionInfo() : void
+	{
+		$connection     = $this->getConnectionMock();
+		$statusResponse = new PhpFpmStatusResponse( $this->getResponseMock(), $connection );
+
+		$this->assertSame( $connection, $statusResponse->getConnection() );
+	}
+
+	/**
+	 * @throws ExpectationFailedException
+	 * @throws InvalidArgumentException
+	 * @throws Exception
+	 */
+	public function testCanGetProcesses() : void
+	{
+		$statusResponse = new PhpFpmStatusResponse(
+			$this->getResponseMock(),
+			$this->getConnectionMock()
+		);
+
+		$expectedProcesses = [
+			new Process(
+				[
+					'pid'                 => 9,
+					'state'               => 'Running',
+					'start time'          => new DateTimeImmutable( '10/Jun/2019:14:56:45 +0000' ),
+					'start since'         => 6035,
+					'requests'            => 112,
+					'request duration'    => 163,
+					'request method'      => 'GET',
+					'request URI'         => '/status?full',
+					'content length'      => 0,
+					'user'                => 'tester',
+					'script'              => 'test-script.php',
+					'last request cpu'    => 0.12,
+					'last request memory' => 12345,
+				]
+			),
+			new Process(
+				[
+					'pid'                 => 10,
+					'state'               => 'Idle',
+					'start time'          => new DateTimeImmutable( '10/Jun/2019:14:56:45 +0000' ),
+					'start since'         => 6035,
+					'requests'            => 114,
+					'request duration'    => 206,
+					'request method'      => '-',
+					'request URI'         => '-',
+					'content length'      => 0,
+					'user'                => '-',
+					'script'              => '-',
+					'last request cpu'    => 0.00,
+					'last request memory' => 2097152,
+				]
+			),
+		];
+
+		$this->assertEquals( $expectedProcesses, $statusResponse->getProcesses() );
 	}
 }

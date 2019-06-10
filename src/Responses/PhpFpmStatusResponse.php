@@ -4,26 +4,42 @@ namespace hollodotme\FastCGI\Responses;
 
 use DateTimeImmutable;
 use Exception;
+use hollodotme\FastCGI\Interfaces\ConfiguresSocketConnection;
 use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
+use hollodotme\FastCGI\Responses\PhpFpm\Process;
+use hollodotme\FastCGI\Responses\PhpFpm\Status;
+use function array_filter;
+use function array_shift;
 use function explode;
+use function preg_match;
+use function trim;
 
-final class PhpFpmStatusResponse implements ProvidesResponseData
+final class PhpFpmStatusResponse
 {
 	/** @var ProvidesResponseData */
 	private $response;
 
-	/** @var array */
-	private $statusArray;
+	/** @var ConfiguresSocketConnection */
+	private $connection;
+
+	/** @var Status */
+	private $status;
+
+	/** @var array|Process[] */
+	private $processes;
 
 	/**
-	 * @param ProvidesResponseData $response
+	 * @param ProvidesResponseData       $response
+	 * @param ConfiguresSocketConnection $connection
 	 *
 	 * @throws Exception
 	 */
-	public function __construct( ProvidesResponseData $response )
+	public function __construct( ProvidesResponseData $response, ConfiguresSocketConnection $connection )
 	{
-		$this->response    = $response;
-		$this->statusArray = [];
+		$this->response   = $response;
+		$this->connection = $connection;
+		$this->processes  = [];
+
 		$this->parseBody();
 	}
 
@@ -32,14 +48,69 @@ final class PhpFpmStatusResponse implements ProvidesResponseData
 	 */
 	private function parseBody() : void
 	{
-		foreach ( explode( "\n", trim( $this->response->getBody() ) ) as $line )
-		{
-			[$name, $value] = explode( ':', trim( $line ), 2 );
-			$name  = trim( $name );
-			$value = trim( $value );
+		$bodyLines  = $this->getCleanBodyLines();
+		$statusData = [];
 
-			$this->statusArray[ $name ] = $this->castValue( $name, $value );
+		# Parse into status array
+		$line = array_shift( $bodyLines );
+		while ( null !== $line && !$this->lineIsProcessSeparator( $line ) )
+		{
+			[$name, $value] = $this->getNameAndValueFromLine( $line );
+
+			$statusData[ $name ] = $this->castStatusValue( $name, $value );
+
+			$line = array_shift( $bodyLines );
 		}
+
+		$this->status = new Status( $statusData );
+
+		if ( [] === $bodyLines )
+		{
+			return;
+		}
+
+		# Parse into processes
+		$currentProcess = [];
+
+		$line = array_shift( $bodyLines );
+		while ( null !== $line )
+		{
+			if ( $this->lineIsProcessSeparator( $line ) )
+			{
+				$this->processes[] = new Process( $currentProcess );
+				$currentProcess    = [];
+				$line              = array_shift( $bodyLines );
+				continue;
+			}
+
+			[$name, $value] = $this->getNameAndValueFromLine( $line );
+
+			$currentProcess[ $name ] = $this->castProcessValue( $name, $value );
+
+			$line = array_shift( $bodyLines );
+		}
+
+		$this->processes[] = new Process( $currentProcess );
+		unset( $currentProcess );
+	}
+
+	private function getCleanBodyLines() : array
+	{
+		return array_filter(
+			explode( "\n", trim( $this->response->getBody() ) )
+		);
+	}
+
+	private function lineIsProcessSeparator( string $line ) : bool
+	{
+		return (bool)preg_match( '#^\*+$#', trim( $line ) );
+	}
+
+	private function getNameAndValueFromLine( string $line ) : array
+	{
+		[$name, $value] = explode( ':', trim( $line ), 2 );
+
+		return [trim( $name ), trim( $value )];
 	}
 
 	/**
@@ -49,7 +120,7 @@ final class PhpFpmStatusResponse implements ProvidesResponseData
 	 * @return DateTimeImmutable|int|string
 	 * @throws Exception
 	 */
-	private function castValue( string $name, string $value )
+	private function castStatusValue( string $name, string $value )
 	{
 		switch ( $name )
 		{
@@ -76,122 +147,57 @@ final class PhpFpmStatusResponse implements ProvidesResponseData
 		}
 	}
 
-	public function getRequestId() : int
+	/**
+	 * @param string $name
+	 * @param string $value
+	 *
+	 * @return DateTimeImmutable|float|int|string
+	 * @throws Exception
+	 */
+	private function castProcessValue( string $name, string $value )
 	{
-		return $this->response->getRequestId();
+		switch ( $name )
+		{
+			case 'pid':
+			case 'start since':
+			case 'requests':
+			case 'request duration':
+			case 'content length':
+			case 'last request memory':
+				return (int)$value;
+			case 'start time':
+				return new DateTimeImmutable( $value );
+			case 'last request cpu':
+				return (float)$value;
+			case 'state':
+			case 'request method':
+			case 'user':
+			case 'script':
+			default:
+				return $value;
+		}
 	}
 
-	public function getHeaders() : array
+	public function getResponse() : ProvidesResponseData
 	{
-		return $this->response->getHeaders();
+		return $this->response;
 	}
 
-	public function getHeader( string $headerKey ) : string
+	public function getConnection() : ConfiguresSocketConnection
 	{
-		return $this->response->getHeader( $headerKey );
+		return $this->connection;
 	}
 
-	public function getBody() : string
+	public function getStatus() : Status
 	{
-		return $this->response->getBody();
+		return $this->status;
 	}
 
 	/**
-	 * @return string
-	 * @deprecated Use getOutput() instead.
+	 * @return array|Process[]
 	 */
-	public function getRawResponse() : string
+	public function getProcesses() : array
 	{
-		return $this->response->getRawResponse();
-	}
-
-	public function getOutput() : string
-	{
-		return $this->response->getOutput();
-	}
-
-	public function getError() : string
-	{
-		return $this->response->getError();
-	}
-
-	public function getDuration() : float
-	{
-		return $this->response->getDuration();
-	}
-
-	public function getPoolName() : string
-	{
-		return $this->statusArray['pool'];
-	}
-
-	public function getProcessManager() : string
-	{
-		return $this->statusArray['process manager'];
-	}
-
-	public function getStartTime() : DateTimeImmutable
-	{
-		return $this->statusArray['start time'];
-	}
-
-	public function getStartSince() : int
-	{
-		return $this->statusArray['start since'];
-	}
-
-	public function getAcceptedConnections() : int
-	{
-		return $this->statusArray['accepted conn'];
-	}
-
-	public function getListenQueue() : int
-	{
-		return $this->statusArray['listen queue'];
-	}
-
-	public function getMaxListenQueue() : int
-	{
-		return $this->statusArray['max listen queue'];
-	}
-
-	public function getListenQueueLength() : int
-	{
-		return $this->statusArray['listen queue len'];
-	}
-
-	public function getIdleProcesses() : int
-	{
-		return $this->statusArray['idle processes'];
-	}
-
-	public function getActiveProcesses() : int
-	{
-		return $this->statusArray['active processes'];
-	}
-
-	public function getTotalProcesses() : int
-	{
-		return $this->statusArray['total processes'];
-	}
-
-	public function getMaxActiveProcesses() : int
-	{
-		return $this->statusArray['max active processes'];
-	}
-
-	public function getMaxChildrenReached() : int
-	{
-		return $this->statusArray['max children reached'];
-	}
-
-	public function getSlowRequests() : int
-	{
-		return $this->statusArray['slow requests'];
-	}
-
-	public function getStatusArray() : array
-	{
-		return $this->statusArray;
+		return $this->processes;
 	}
 }
