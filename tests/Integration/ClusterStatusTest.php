@@ -2,7 +2,7 @@
 
 namespace hollodotme\FastCGI\Tests\Integration;
 
-use hollodotme\FastCGI\ClusterStatus;
+use hollodotme\FastCGI\ClusterProxy;
 use hollodotme\FastCGI\Collections\Cluster;
 use hollodotme\FastCGI\Exceptions\ConnectException;
 use hollodotme\FastCGI\Exceptions\ReadFailedException;
@@ -21,8 +21,8 @@ final class ClusterStatusTest extends TestCase
 {
 	use SocketDataProviding;
 
-	/** @var ClusterStatus */
-	private $clusterStatus;
+	/** @var ClusterProxy */
+	private $clusterProxy;
 
 	protected function setUp() : void
 	{
@@ -36,12 +36,12 @@ final class ClusterStatusTest extends TestCase
 			)
 		);
 
-		$this->clusterStatus = new ClusterStatus( $cluster );
+		$this->clusterProxy = new ClusterProxy( $cluster );
 	}
 
 	protected function tearDown() : void
 	{
-		$this->clusterStatus = null;
+		$this->clusterProxy = null;
 	}
 
 	/**
@@ -55,7 +55,7 @@ final class ClusterStatusTest extends TestCase
 	 */
 	public function testGetStatus() : void
 	{
-		$statusResponses = $this->clusterStatus->getStatus(
+		$statusResponses = $this->clusterProxy->getStatus(
 			'/status',
 			PhpFpmStatusResponse::class
 		);
@@ -64,8 +64,8 @@ final class ClusterStatusTest extends TestCase
 
 		$expectedPoolNames = ['network', 'uds'];
 		$poolNames         = [
-			$statusResponses[0]->getPoolName(),
-			$statusResponses[1]->getPoolName(),
+			$statusResponses[0]->getStatus()->getPoolName(),
+			$statusResponses[1]->getStatus()->getPoolName(),
 		];
 
 		$this->assertSame( $expectedPoolNames, $poolNames );

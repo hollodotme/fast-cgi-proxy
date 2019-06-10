@@ -4,11 +4,18 @@ namespace hollodotme\FastCGI;
 
 use Generator;
 use hollodotme\FastCGI\Collections\RoundRobin;
+use hollodotme\FastCGI\Exceptions\ConnectException;
 use hollodotme\FastCGI\Exceptions\ReadFailedException;
+use hollodotme\FastCGI\Exceptions\TimedoutException;
+use hollodotme\FastCGI\Exceptions\WriteFailedException;
 use hollodotme\FastCGI\Interfaces\ProvidesConnections;
 use hollodotme\FastCGI\Interfaces\ProvidesRequestData;
 use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
+use hollodotme\FastCGI\Requests\GetRequest;
+use hollodotme\FastCGI\Responses\PhpFpmStatusResponse;
 use Throwable;
+use function parse_url;
+use const PHP_URL_PATH;
 
 class ClusterProxy
 {
@@ -76,5 +83,49 @@ class ClusterProxy
 	public function handleReadyResponses( ?int $timeoutMs = null ) : void
 	{
 		$this->proxy->handleReadyResponses( $timeoutMs );
+	}
+
+	/**
+	 * @param string $statusEndpoint
+	 * @param string $responseClass
+	 *
+	 * @return array|ProvidesResponseData[]
+	 * @throws ReadFailedException
+	 * @throws Throwable
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
+	 * @throws ConnectException
+	 */
+	public function getStatus( string $statusEndpoint, string $responseClass = PhpFpmStatusResponse::class ) : array
+	{
+		$statusResponses = [];
+		$queryString     = (string)parse_url( $statusEndpoint, PHP_URL_QUERY );
+		$path            = (string)parse_url( $statusEndpoint, PHP_URL_PATH );
+
+		foreach ( $this->cluster->getIterator() as $connection )
+		{
+			$request = new GetRequest( $path, '' );
+			$request->addCustomVars(
+				[
+					'SCRIPT_NAME'  => $path,
+					'QUERY_STRING' => $queryString,
+					'REQUEST_URI'  => $statusEndpoint,
+				]
+			);
+
+			$request->addResponseCallbacks(
+				static function ( ProvidesResponseData $response )
+				use ( $responseClass, $connection, &$statusResponses )
+				{
+					$statusResponses[] = new $responseClass( $response, $connection );
+				}
+			);
+
+			$this->proxy->sendAsyncRequest( $request );
+		}
+
+		$this->waitForResponses();
+
+		return $statusResponses;
 	}
 }
