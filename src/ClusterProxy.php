@@ -122,6 +122,13 @@ class ClusterProxy
 				}
 			);
 
+			$request->addFailureCallbacks(
+				static function ( Throwable $e )
+				{
+					throw $e;
+				}
+			);
+
 			$this->proxy->sendAsyncRequest( $request );
 		}
 

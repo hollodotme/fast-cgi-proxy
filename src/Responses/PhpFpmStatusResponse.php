@@ -9,6 +9,7 @@ use hollodotme\FastCGI\Interfaces\ProvidesResponseData;
 use hollodotme\FastCGI\Interfaces\ProvidesServerStatus;
 use hollodotme\FastCGI\Responses\PhpFpm\Process;
 use hollodotme\FastCGI\Responses\PhpFpm\Status;
+use RuntimeException;
 use function array_filter;
 use function array_shift;
 use function explode;
@@ -33,6 +34,7 @@ final class PhpFpmStatusResponse implements ProvidesServerStatus
 	 * @param ProvidesResponseData       $response
 	 * @param ConfiguresSocketConnection $connection
 	 *
+	 * @throws RuntimeException
 	 * @throws Exception
 	 */
 	public function __construct( ProvidesResponseData $response, ConfiguresSocketConnection $connection )
@@ -41,7 +43,22 @@ final class PhpFpmStatusResponse implements ProvidesServerStatus
 		$this->connection = $connection;
 		$this->processes  = [];
 
+		$this->guardResponseIsValid();
 		$this->parseBody();
+	}
+
+	/**
+	 * @throws RuntimeException
+	 */
+	private function guardResponseIsValid() : void
+	{
+		if ( 'File not found.' === trim( $this->response->getBody() ) )
+		{
+			throw new RuntimeException(
+				"Could not find server's status path."
+				. " Please check for typos and if the status endpoint is enabled in your server's config."
+			);
+		}
 	}
 
 	/**

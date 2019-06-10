@@ -14,6 +14,7 @@ use hollodotme\FastCGI\SocketConnections\UnixDomainSocket;
 use hollodotme\FastCGI\Tests\Traits\SocketDataProviding;
 use PHPUnit\Framework\ExpectationFailedException;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use SebastianBergmann\RecursionContext\InvalidArgumentException;
 use Throwable;
 
@@ -55,6 +56,7 @@ final class ClusterStatusTest extends TestCase
 	 */
 	public function testGetStatus() : void
 	{
+		/** @var array|PhpFpmStatusResponse[] $statusResponses */
 		$statusResponses = $this->clusterProxy->getStatus(
 			'/status',
 			PhpFpmStatusResponse::class
@@ -69,5 +71,29 @@ final class ClusterStatusTest extends TestCase
 		];
 
 		$this->assertSame( $expectedPoolNames, $poolNames );
+	}
+
+	/**
+	 * @throws ConnectException
+	 * @throws ReadFailedException
+	 * @throws Throwable
+	 * @throws TimedoutException
+	 * @throws WriteFailedException
+	 */
+	public function testThrowsExceptionIfStatusEndpointCannotBeFound() : void
+	{
+		$this->expectException( RuntimeException::class );
+		$this->expectExceptionMessage(
+			"Could not find server's status path."
+			. " Please check for typos and if the status endpoint is enabled in your server's config."
+		);
+
+		/** @noinspection UnusedFunctionResultInspection */
+		$this->clusterProxy->getStatus(
+			'/not-existing-status-endpoint',
+			PhpFpmStatusResponse::class
+		);
+
+		$this->fail( 'Expected runtime exception to be thrown.' );
 	}
 }
