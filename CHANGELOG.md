@@ -14,6 +14,8 @@ This project adheres to [Semantic Versioning](http://semver.org/) and [Keep a CH
 
 ### Changed
 
+* Raised minimum version requirement of [hollodotme/fast-cgi-client](https://github.com/hollodotme/fast-cgi-client) to `v2.7.2`.
+
 #### Backwards incompatible changes (BC breaks)
 
 * Connection collections (`Random`, `RoundRobin`) are immutable, cannot be empty and must be 
